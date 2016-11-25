@@ -10,7 +10,7 @@ describe 'Simple Token Authentication' do
 
   describe ':header_names option', header_names_option: true do
 
-    describe 'determines which header fields are looked at for authentication credentials' do
+    describe 'determines which header fields are looked at for authentication credentials', before_filter: true, before_action: true do
 
       before(:each) do
         user = double()
@@ -24,20 +24,21 @@ describe 'Simple Token Authentication' do
         # given one *c*orrect record (which is supposed to get signed in)
         @charles_record = double()
         [user, admin].each do |model|
-          allow(model).to receive(:where).with(email: 'charles@example.com').and_return([@charles_record])
+          allow(model).to receive(:find_for_authentication).with(email: 'charles@example.com').and_return(@charles_record)
         end
         allow(@charles_record).to receive(:authentication_token).and_return('ch4rlEs_toKeN')
 
         # and one *w*rong record (which should not be signed in)
         @waldo_record = double()
         [user, admin].each do |model|
-          allow(model).to receive(:where).with(email: 'waldo@example.com').and_return([@waldo_record])
+          allow(model).to receive(:find_for_authentication).with(email: 'waldo@example.com').and_return(@waldo_record)
         end
         allow(@waldo_record).to receive(:authentication_token).and_return('w4LdO_toKeN')
 
         # given a controller class which acts as token authentication handler
         @controller_class = Class.new
         allow(@controller_class).to receive(:before_filter)
+        allow(@controller_class).to receive(:before_action)
         @controller_class.send :extend, SimpleTokenAuthentication::ActsAsTokenAuthenticationHandler
 
         @controller = @controller_class.new
@@ -394,24 +395,25 @@ describe 'Simple Token Authentication' do
       end
     end
 
-    it 'can be modified from an initializer file', public: true do
+    it 'can be modified from an initializer file', public: true, before_filter: true, before_action: true do
       user = double()
       stub_const('User', user)
       allow(user).to receive(:name).and_return('User')
 
       # given one *c*orrect record (which is supposed to get signed in)
       @charles_record = double()
-      allow(user).to receive(:where).with(email: 'charles@example.com').and_return([@charles_record])
+      allow(user).to receive(:find_for_authentication).with(email: 'charles@example.com').and_return(@charles_record)
       allow(@charles_record).to receive(:authentication_token).and_return('ch4rlEs_toKeN')
 
       # and one *w*rong record (which should not be signed in)
       @waldo_record = double()
-      allow(user).to receive(:where).with(email: 'waldo@example.com').and_return([@waldo_record])
+      allow(user).to receive(:find_for_authentication).with(email: 'waldo@example.com').and_return(@waldo_record)
       allow(@waldo_record).to receive(:authentication_token).and_return('w4LdO_toKeN')
 
       # given a controller class which acts as token authentication handler
       @controller_class = Class.new
       allow(@controller_class).to receive(:before_filter)
+      allow(@controller_class).to receive(:before_action)
       @controller_class.send :extend, SimpleTokenAuthentication::ActsAsTokenAuthenticationHandler
 
       # INITIALIZATION

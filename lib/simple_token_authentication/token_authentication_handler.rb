@@ -59,8 +59,7 @@ module SimpleTokenAuthentication
 
       # The finder method should be compatible with all the model adapters,
       # namely ActiveRecord and Mongoid in all their supported versions.
-      record = nil
-      record = identifier_param_value && entity.model.where(entity.identifier => identifier_param_value).first
+      identifier_param_value && entity.model.find_for_authentication(entity.identifier => identifier_param_value)
     end
 
     # Private: Take benefit from Devise case-insensitive keys
@@ -75,14 +74,12 @@ module SimpleTokenAuthentication
       identifier_value
     end
 
-    # Private: Get one (always the same) object which behaves as a token comprator
     def token_comparator
-      @@token_comparator ||= TokenComparator.new
+      TokenComparator.instance
     end
 
-    # Private: Get one (always the same) object which behaves as a sign in handler
     def sign_in_handler
-      @@sign_in_handler ||= SignInHandler.new
+      SignInHandler.instance
     end
 
     module ClassMethods
@@ -115,9 +112,9 @@ module SimpleTokenAuthentication
           class_variable_get(:@@fallback_authentication_handler)
         else
           if options[:fallback] == :exception
-            class_variable_set(:@@fallback_authentication_handler, ExceptionFallbackHandler.new)
+            class_variable_set(:@@fallback_authentication_handler, ExceptionFallbackHandler.instance)
           else
-            class_variable_set(:@@fallback_authentication_handler, DeviseFallbackHandler.new)
+            class_variable_set(:@@fallback_authentication_handler, DeviseFallbackHandler.instance)
           end
         end
       end
@@ -155,7 +152,11 @@ module SimpleTokenAuthentication
         else
           :"authenticate_#{entity.name_underscore}_from_token"
         end
-        if defined?(before_filter)
+
+        if respond_to?(:before_action)
+          # See https://github.com/rails/rails/commit/9d62e04838f01f5589fa50b0baa480d60c815e2c
+          before_action authenticate_method, options.slice(:only, :except, :if, :unless)
+        else
           before_filter authenticate_method, options.slice(:only, :except, :if, :unless)
         end
       end

@@ -10,7 +10,7 @@ Simple Token Authentication
 
 Token authentication support has been removed from [Devise][devise] for security reasons. In [this gist][original-gist], Devise's [José Valim][josevalim] explains how token authentication should be performed in order to remain safe.
 
-This gem packages the content of the gist.
+This gem packages the content of the gist and provides a set of convenient options for increased flexibility.
 
   [devise]: https://github.com/plataformatec/devise
   [original-gist]: https://gist.github.com/josevalim/fb706b1e933ef01e4fb6
@@ -24,13 +24,38 @@ This gem packages the content of the gist.
 Installation
 ------------
 
-Install [Devise][devise] with any modules you want, then add the gem to your `Gemfile`:
+### In a nutshell
+
+First install [Devise][devise] and configure it with any modules you want, then add the gem to your `Gemfile` and `bundle install`:
 
 ```ruby
 # Gemfile
 
 gem 'simple_token_authentication', '~> 1.0' # see semver.org
 ```
+
+Once that done, only two steps are required to setup token authentication:
+
+1. [Make one or more models token authenticatable][token_authenticatable] (ActiveRecord and Mongoid are supported)
+1. [Allow controllers to handle token authentication][token_authentication_handler] (Rails, Rails API, and `ActionController::Metal` are supported)
+
+_If you want more details about how the gem works, keep reading! We'll get to these two steps after the overview._
+
+  [token_authenticatable]: #make-models-token-authenticatable
+  [token_authentication_handler]: #allow-controllers-to-handle-token-authentication
+
+### Overview
+
+Simple Token Authentication provides the ability to manage an `authentication_token` from your model instances. A model with that ability enabled is said to be **token authenticatable** (typically, the `User` model will be made token authenticatable).
+
+The gem also provides the ability for any controller to handle token authentication for one or multiple _token authenticatable_ models. That ability allows, for example, to automatically sign in an `user` when the correct credentials are provided with a request. A controller with that ability enabled is said to behave as a **token authentication handler**.
+The token authentication credentials for a given request can be provided either in the form of [query params][authentication_method_query_params], or [HTTP headers][authentication_method_headers]. By default, the required credentials are the user's email and their authentication token.
+
+What happens when a request is provided with no credentials or incorrect credentials is [highly configurable][integration_with_other_authentication_methods] (some scenarios may require access to be denied, other may allow unauthenticated access, or provide others strategies to authenticate users). By default, when token authentication fails, Devise is used as a fallback to ensure a consistent behaviour with controllers that do not handle token authentication.
+
+  [authentication_method_query_params]: #authentication-method-1-query-params
+  [authentication_method_headers]: #authentication-method-2-request-headers
+  [integration_with_other_authentication_methods]: #integration-with-other-authentication-and-authorization-methods
 
 ### Make models token authenticatable
 
@@ -58,10 +83,10 @@ class User < ActiveRecord::Base
 end
 ```
 
-If the model or models you chose have no `:authentication_token` attribute, add them one (with an index):
+If the model or models you chose have no `:authentication_token` attribute, add them one (with a unique index):
 
 ```bash
-rails g migration add_authentication_token_to_users authentication_token:string:index
+rails g migration add_authentication_token_to_users "authentication_token:string{30}:uniq"
 rake db:migrate
 ```
 
@@ -98,7 +123,7 @@ Define which controllers will handle token authentication (typ. `ApplicationCont
 
 class ApplicationController < ActionController::Base
                          # or ActionController::API
-
+                         # or ActionController::Metal
   # ...
 
   acts_as_token_authentication_handler_for User
@@ -309,18 +334,19 @@ Any question? Please don't hesitate to open a new issue to get help. I keep ques
   [open-questions]: https://github.com/gonzalo-bulnes/simple_token_authentication/issues?labels=question&page=1&state=open
   [faq]: https://github.com/gonzalo-bulnes/simple_token_authentication/issues?direction=desc&labels=question&page=1&sort=comments&state=closed
 
-### Changelog
+### Change Log
 
-Releases are commented to provide a brief [changelog][changelog].
+Releases are commented to provide a [brief change log][releases], details can be found in the [`CHANGELOG`][changelog] file.
 
-  [changelog]: https://github.com/gonzalo-bulnes/simple_token_authentication/releases
+  [releases]: https://github.com/gonzalo-bulnes/simple_token_authentication/releases
+  [changelog]: ./CHANGELOG.md
 
 Development
 -----------
 
 ### Testing and documentation
 
-This gem development has been test-driven since `v1.0.0`. Until `v1.5.1`, the gem behaviour was described using [Cucumber][cucumber] and [RSpec][rspec] in a dummy app generated by [Aruba][aruba]. Since `v1.5.2` it is described using Rspec alone.
+This gem development has been test-driven since `v1.0.0`. Until `v1.5.1`, the gem behaviour was described using [Cucumber][cucumber] and [RSpec][rspec] in a dummy app generated by [Aruba][aruba]. Since `v1.5.2` it is described using Rspec alone and [Appraisal][appraisal] is used since `v1.13.0` for [regression testing][regression].
 
 RSpec [tags][tags] are used to categorize the spec examples.
 
@@ -330,8 +356,10 @@ The `private` or `protected` specs are written for development purpose only. Bec
 
 Run `rake spec:public` to print the gem public documentation.
 
+  [appraisal]: https://github.com/thoughtbot/appraisal
   [aruba]: https://github.com/cucumber/aruba
   [cucumber]: https://github.com/cucumber/cucumber-rails
+  [regression]: https://github.com/gonzalo-bulnes/simple_token_authentication/wiki/Regression-Testing
   [rspec]: https://www.relishapp.com/rspec/rspec-rails/docs
   [tags]: https://www.relishapp.com/rspec/rspec-core/v/3-1/docs/command-line/tag-option
   [travis]: https://travis-ci.org/gonzalo-bulnes/simple_token_authentication/builds
@@ -343,6 +371,10 @@ Contributions are welcome! I'm not personally maintaining any [list of contribut
   [contributors]: https://github.com/gonzalo-bulnes/simple_token_authentication/graphs/contributors
 
 Please be sure to [review the open issues][open-questions] and contribute with your ideas or code in the issue best suited to the topic. Keeping discussions in a single place makes easier to everyone interested in that topic to keep track of the contributions.
+
+Finally, please note that this project is released with a [Contributor Code of Conduct][coc]. By participating in this project you agree to abide by its terms.
+
+  [coc]: ./CODE_OF_CONDUCT.md
 
 Credits
 -------
@@ -356,7 +388,7 @@ License
 -------
 
     Simple Token Authentication
-    Copyright (C) 2013, 2014, 2015 Gonzalo Bulnes Guilpain
+    Copyright (C) 2013, 2014, 2015, 2016 Gonzalo Bulnes Guilpain
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

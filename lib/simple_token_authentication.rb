@@ -1,12 +1,11 @@
+require 'active_support/version'
 require 'simple_token_authentication/acts_as_token_authenticatable'
 require 'simple_token_authentication/acts_as_token_authentication_handler'
 require 'simple_token_authentication/configuration'
+require 'simple_token_authentication/errors'
 
 module SimpleTokenAuthentication
   extend Configuration
-
-  NoAdapterAvailableError = Class.new(LoadError)
-  InvalidOptionValue = Class.new(RuntimeError)
 
   private
 
@@ -42,13 +41,20 @@ module SimpleTokenAuthentication
     available_adapters.compact!
 
     # stop here if dependencies are missing or no adequate adapters are present
-    raise SimpleTokenAuthentication::NoAdapterAvailableError if available_adapters.empty?
+    raise NoAdapterAvailableError.new if available_adapters.empty?
 
     available_adapters
   end
 
   def self.adapter_dependency_fulfilled? adapter_short_name
-    qualified_const_defined?(SimpleTokenAuthentication.adapters_dependencies[adapter_short_name])
+    dependency = SimpleTokenAuthentication.adapters_dependencies[adapter_short_name]
+
+    if !respond_to?(:qualified_const_defined?) || (ActiveSupport.respond_to?(:version) && ActiveSupport.version.to_s =~ /^5\.0/)
+      # See https://github.com/gonzalo-bulnes/simple_token_authentication/pull/229/commits/74eda6c28cd0b45636c466de56f2dbaca5c5b629#r57507423
+      const_defined?(dependency)
+    else
+      qualified_const_defined?(dependency)
+    end
   end
 
   available_model_adapters = load_available_adapters SimpleTokenAuthentication.model_adapters

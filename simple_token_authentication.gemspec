@@ -11,18 +11,19 @@ Gem::Specification.new do |s|
   s.email       = ["gon.bulnes@gmail.com"]
   s.homepage    = "https://github.com/gonzalo-bulnes/simple_token_authentication"
   s.summary     = "Simple (but safe) token authentication for Rails apps or API with Devise."
-  s.license     = "GPLv3"
+  s.license     = "GPL-3.0+"
 
-  s.files = Dir["{app,config,doc,lib}/**/*", "LICENSE", "Rakefile", "README.md"]
-  s.test_files = Dir["spec/**/*"]
+  s.files = Dir["{app,config,doc,lib}/**/*", "CHANGELOG.md", "LICENSE", "Rakefile", "README.md"]
+  s.test_files = Dir["spec/**/*", "gemfiles/*.gemfile", "gemfiles/*.gemfile.lock", "Appraisals"]
 
-  s.add_dependency "actionmailer", ">= 3.2.6", "< 5"
-  s.add_dependency "actionpack", ">= 3.2.6", "< 5"
-  s.add_dependency "devise", "~> 3.2"
+  s.add_dependency "actionmailer", ">= 3.2.6", "< 6"
+  s.add_dependency "actionpack", ">= 3.2.6", "< 6"
+  s.add_dependency "devise", ">= 3.2", "< 6"
 
   s.add_development_dependency "rspec", "~> 3.0"
   s.add_development_dependency "inch", "~> 0.4"
-  s.add_development_dependency "activerecord", ">= 3.2.6", "< 5"
-  s.add_development_dependency "mongoid", ">= 3.1.0", "< 5"
-  s.add_development_dependency "grape", ">= 0.9.0", "< 0.12.0"
+  s.add_development_dependency "activerecord", ">= 3.2.6", "< 6"
+  s.add_development_dependency 'mongoid', '>= 3.1.0', '< 7'
+  s.add_development_dependency "appraisal", "~> 2.0"
+  s.add_development_dependency "grape", ">= 0.9.0", "<= 0.18.0"
 end
